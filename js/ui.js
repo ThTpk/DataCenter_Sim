@@ -73,7 +73,7 @@
         <div class="t"><b>${esc(c.name)}</b><span>${esc(c.th)}</span>
         <em>${esc(specChips(k).slice(0, 2).join(' · '))}</em></div></div>`;
     }).join('') + `<div style="font-size:10.5px;color:var(--txt3);padding:6px 4px;line-height:1.5">
-      แถบสีม่วงด้านซ้าย = อุปกรณ์ที่ต้องลากไปวาง<b style="color:#a78bfa"> บนตู้ Rack</b></div>`;
+      แถบสีม่วงด้านซ้าย = อุปกรณ์ที่ต้องลากไปวาง<b style="color:#a78bfa"> บนตู้ Rack</b><br>ลากวางได้ทั้งมุมมองผัง 2D และห้อง 3D</div>`;
 
     $('#palette').querySelectorAll('.pitem').forEach(it => {
       it.addEventListener('dragstart', e => {
@@ -95,6 +95,7 @@
       Object.keys(nodeEls).forEach(k => { nodeEls[k].remove(); delete nodeEls[k]; });
       UI.sel = UI.selLink = UI.from = null;
       const p = SIM.PRESETS[sel.value];
+      if (window.V3D) window.V3D.fit();
       status(p.name + ' — ' + p.desc);
       if (p.hints) toast('แบบฝึกหัด: ' + p.hints.length + ' จุดบกพร่อง ดูคำใบ้ในแท็บเหตุการณ์');
       refresh();
@@ -204,21 +205,7 @@
       const el = e.target.closest('.node'); if (!el) return;
       const n = SIM.model.nodes.find(x => x.nid === el.dataset.nid); if (!n) return;
 
-      if (UI.mode === 'connect') {
-        if (!UI.from) { UI.from = n; status('เลือกต้นทาง: ' + DC.get(n.type).name + ' — คลิกปลายทาง'); }
-        else if (UI.from === n) { UI.from = null; status('ยกเลิกการต่อสาย'); }
-        else {
-          const kind = UI.kind === 'auto' ? SIM.linkKindFor(UI.from, n) : UI.kind;
-          const l = kind ? SIM.addLink(UI.from, n, kind) : null;
-          if (l) { toast('ต่อ' + DC.LINK_KINDS[l.kind].name + ': ' + DC.get(UI.from.type).name + ' → ' + DC.get(n.type).name, 'ok'); UI.from = null; }
-          else {
-            const allow = (DC.RULES[UI.kind === 'auto' ? 'power' : UI.kind] || {})[UI.from.type];
-            toast('ต่อไม่ได้: ' + DC.get(UI.from.type).name + ' → ' + DC.get(n.type).name +
-              (allow && allow.length ? ' (ต่อได้เฉพาะ ' + allow.map(t => DC.get(t).name).join(', ') + ')' : ' (หรือมีสายนี้อยู่แล้ว)'), 'err');
-          }
-        }
-        UI.sel = n; refresh(); return;
-      }
+      if (UI.mode === 'connect') { tryConnect(n); return; }
 
       UI.sel = n; UI.selLink = null;
       if (UI.mode === 'select') {
@@ -258,6 +245,74 @@
         else if (UI.selLink) { SIM.removeLink(UI.selLink); UI.selLink = null; refresh(); }
       }
     });
+  }
+
+  function tryConnect(n) {
+    if (!UI.from) { UI.from = n; status('เลือกต้นทาง: ' + DC.get(n.type).name + ' — คลิกปลายทาง'); }
+    else if (UI.from === n) { UI.from = null; status('ยกเลิกการต่อสาย'); }
+    else {
+      const kind = UI.kind === 'auto' ? SIM.linkKindFor(UI.from, n) : UI.kind;
+      const l = kind ? SIM.addLink(UI.from, n, kind) : null;
+      if (l) { toast('ต่อ' + DC.LINK_KINDS[l.kind].name + ': ' + DC.get(UI.from.type).name + ' → ' + DC.get(n.type).name, 'ok'); UI.from = null; }
+      else {
+        const allow = (DC.RULES[UI.kind === 'auto' ? 'power' : UI.kind] || {})[UI.from.type];
+        toast('ต่อไม่ได้: ' + DC.get(UI.from.type).name + ' → ' + DC.get(n.type).name +
+          (allow && allow.length ? ' (ต่อได้เฉพาะ ' + allow.map(t => DC.get(t).name).join(', ') + ')' : ' (หรือมีสายนี้อยู่แล้ว)'), 'err');
+      }
+    }
+    UI.sel = n; refresh();
+  }
+
+  /* ===================================================== มุมมอง 3 มิติ */
+  function setView(v) {
+    UI.view = v;
+    document.querySelectorAll('.btn.view').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+    $('#canvasWrap').classList.toggle('hidden', v === '3d');
+    $('#view3dWrap').classList.toggle('hidden', v !== '3d');
+    window.V3D.show(v === '3d');
+    if (v === '3d') requestAnimationFrame(() => { window.V3D.resize(); });
+    status(v === '3d'
+      ? 'มุมมอง 3 มิติ: ลากเพื่อหมุน · Shift+ลากเพื่อเลื่อน · ล้อเมาส์เพื่อซูม · คลิกอุปกรณ์เพื่อดูรายละเอียด'
+      : 'มุมมองผัง 2 มิติ: ลากจัดตำแหน่งอุปกรณ์และต่อสายได้');
+    refresh();
+  }
+
+  function bind3D() {
+    window.V3D.mount($('#cv3d'));
+    $('#viewGroup').addEventListener('click', e => {
+      const b = e.target.closest('.btn.view'); if (b) setView(b.dataset.view);
+    });
+    $('#hud3d').addEventListener('click', e => {
+      const b = e.target.closest('[data-cam]'); if (b) window.V3D.setView(b.dataset.cam);
+    });
+    $('#hud3d').addEventListener('change', e => {
+      const t = e.target; if (t.dataset.l3) window.V3D.opts[t.dataset.l3] = t.checked;
+    });
+
+    // คลิกเลือกอุปกรณ์ในภาพ 3 มิติ
+    window.onPick3D = function (n) {
+      if (!n) { UI.sel = null; UI.selLink = null; refresh(); return; }
+      if (UI.mode === 'connect') { tryConnect(n); return; }
+      UI.sel = n; UI.selLink = null;
+      if (UI.tab === 'dash') { UI.tab = 'detail'; syncTabs(); }
+      refresh();
+    };
+
+    // ลากองค์ประกอบจากคลังมาวางในภาพ 3 มิติ
+    window.onDrop3D = function (type, mx, my, floor, picked) {
+      const spec = DC.get(type); if (!spec) return;
+      if (spec.intoRack) {
+        if (!picked || picked.type !== 'rack') { toast('อุปกรณ์ IT ต้องวางบนตู้ Rack — ลากไปทับตู้ในภาพ 3 มิติ', 'err'); return; }
+        const res = SIM.addChild(picked, type);
+        if (!res.ok) { toast(res.msg, 'err'); return; }
+        UI.sel = picked; toast('ติดตั้ง ' + spec.name + ' ในตู้แล้ว', 'ok');
+      } else {
+        if (!floor) { toast('วางตรงนี้ไม่ได้ — หมุนกล้องให้เห็นพื้นห้องก่อน', 'err'); return; }
+        const p = window.V3D.worldToLayout(floor);
+        UI.sel = SIM.addNode(type, Math.max(0, Math.min(1116, p.x)), Math.max(0, Math.min(945, p.y)));
+      }
+      refresh();
+    };
   }
 
   /* ========================================================== node UI */
@@ -766,7 +821,8 @@
   /* ========================================================= refresh */
   function refresh() {
     const rt = SIM.compute();
-    renderNodes(rt); renderWires(rt); renderKPIs(rt); renderChallenges(rt);
+    if (!window.V3D.visible) { renderNodes(rt); renderWires(rt); }
+    renderKPIs(rt); renderChallenges(rt);
     if (UI.tab === 'dash') renderDash(rt);
     else if (UI.tab === 'detail') renderDetail(rt);
     else if (UI.tab === 'cloud') renderCloud(rt);
@@ -791,7 +847,7 @@
   /* ============================================================ init */
   function init() {
     buildZones(); buildPalTabs(); buildPalette(); buildPresetSel();
-    bindToolbar(); bindCanvas(); bindRight(); bindModal();
+    bindToolbar(); bindCanvas(); bindRight(); bindModal(); bind3D();
     SIM.loadPreset('tier1');
     status('โหลดแบบจำลอง Tier I — ลองกดปุ่มเล่นแล้วทดลองเหตุการณ์ "ไฟการไฟฟ้าดับ" ในแถบขวา');
     refresh();

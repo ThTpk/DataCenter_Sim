@@ -66,6 +66,10 @@
     <!-- ===================== CENTER : CANVAS ===================== -->
     <section id="stage">
       <div id="toolbar">
+        <div class="tgroup" id="viewGroup">
+          <button class="btn view active" data-view="2d">🗺 ผัง 2D</button>
+          <button class="btn view" data-view="3d">🧊 ห้อง 3D</button>
+        </div>
         <div class="tgroup">
           <button class="btn tool active" data-mode="select">🖱 เลือก / ลาก</button>
           <button class="btn tool" data-mode="connect">🔌 ต่อสาย</button>
@@ -95,6 +99,30 @@
           <svg id="wires"></svg>
           <div id="nodes"></div>
           <div id="hintLayer"></div>
+        </div>
+      </div>
+
+      <div id="view3dWrap" class="hidden">
+        <canvas id="cv3d"></canvas>
+        <div id="hud3d">
+          <div class="hgroup">
+            <span class="lbl">มุมกล้อง</span>
+            <button class="btn mini" data-cam="iso">ภาพรวม</button>
+            <button class="btn mini" data-cam="front">ด้านหน้า</button>
+            <button class="btn mini" data-cam="top">มุมบน</button>
+            <button class="btn mini" data-cam="white">White Space</button>
+            <button class="btn mini" data-cam="plant">ห้องเครื่อง</button>
+          </div>
+          <div class="hgroup">
+            <span class="lbl">แสดง</span>
+            <label><input type="checkbox" data-l3="power" checked> สายไฟ</label>
+            <label><input type="checkbox" data-l3="cool" checked> ท่อน้ำเย็น</label>
+            <label><input type="checkbox" data-l3="net" checked> สายสัญญาณ</label>
+            <label><input type="checkbox" data-l3="flow" checked> การไหล</label>
+            <label><input type="checkbox" data-l3="labels" checked> ป้ายชื่อ</label>
+            <label><input type="checkbox" data-l3="zones" checked> โซน</label>
+          </div>
+          <div class="hint">ลาก = หมุนกล้อง · Shift+ลาก = เลื่อน · ล้อเมาส์ = ซูม · คลิกอุปกรณ์เพื่อดูรายละเอียด · ลากองค์ประกอบจากแถบซ้ายมาวางบนพื้นได้</div>
         </div>
       </div>
 
@@ -144,6 +172,7 @@
 <script src="js/catalog.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/scenarios.js"></script>
+<script src="js/view3d.js"></script>
 <script src="js/ui.js"></script>
 </body>
 </html>
