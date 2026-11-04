@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Center Simulator — สื่อการเรียน Data Center &amp; Cloud Computing</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ===================== HEADER ===================== -->
+  <header id="topbar">
+    <div class="brand">
+      <span class="logo">▞</span>
+      <div>
+        <h1>Data Center Simulator</h1>
+        <p>สื่อการเรียนรู้องค์ประกอบของ Data Center และ Cloud Computing</p>
+      </div>
+    </div>
+
+    <div class="preset-box">
+      <label>แบบจำลอง</label>
+      <select id="presetSel"></select>
+      <button id="btnHelp" class="btn ghost" title="บทเรียนและวิธีใช้">📖 บทเรียน</button>
+    </div>
+
+    <div class="clock-box">
+      <div class="clock">
+        <span id="simClock">00:00:00</span>
+        <small>เวลาจำลอง</small>
+      </div>
+      <button id="btnPlay" class="btn primary">▶ เริ่มเดินเวลา</button>
+      <div class="speed">
+        <label>ความเร็ว</label>
+        <select id="speedSel">
+          <option value="1">1×</option>
+          <option value="4" selected>4×</option>
+          <option value="15">15×</option>
+          <option value="60">60×</option>
+        </select>
+      </div>
+      <button id="btnReset" class="btn ghost" title="คืนสถานะอุปกรณ์ทั้งหมดและรีเซ็ตเวลา">↺ รีเซ็ต</button>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- ===================== LEFT : PALETTE ===================== -->
+    <aside id="left">
+      <div class="panel-head">
+        <h2>องค์ประกอบ</h2>
+        <small>ลากไปวางบนผัง</small>
+      </div>
+      <div id="palTabs" class="tabs small"></div>
+      <div id="palette" class="scroll"></div>
+
+      <div class="panel-head bordered">
+        <h2>โจทย์ท้าทาย</h2>
+        <small>ตรวจอัตโนมัติ</small>
+      </div>
+      <div id="challenges" class="scroll short"></div>
+    </aside>
+
+    <!-- ===================== CENTER : CANVAS ===================== -->
+    <section id="stage">
+      <div id="toolbar">
+        <div class="tgroup">
+          <button class="btn tool active" data-mode="select">🖱 เลือก / ลาก</button>
+          <button class="btn tool" data-mode="connect">🔌 ต่อสาย</button>
+          <button class="btn tool" data-mode="erase">✂ ตัดสาย</button>
+        </div>
+        <div class="tgroup" id="kindGroup">
+          <span class="lbl">ชนิดสาย:</span>
+          <button class="btn kind active" data-kind="auto">อัตโนมัติ</button>
+          <button class="btn kind k-power" data-kind="power">ไฟฟ้า</button>
+          <button class="btn kind k-cool" data-kind="cool">ความเย็น</button>
+          <button class="btn kind k-net" data-kind="net">เครือข่าย</button>
+        </div>
+        <div class="tgroup right">
+          <button id="btnAuto" class="btn">🪄 เชื่อมต่ออัตโนมัติ</button>
+          <button id="btnClear" class="btn ghost">🗑 ล้างผัง</button>
+          <span class="zoom">
+            <button id="zOut" class="btn mini">−</button>
+            <span id="zVal">100%</span>
+            <button id="zIn" class="btn mini">+</button>
+          </span>
+        </div>
+      </div>
+
+      <div id="canvasWrap">
+        <div id="canvas">
+          <div id="zones"></div>
+          <svg id="wires"></svg>
+          <div id="nodes"></div>
+          <div id="hintLayer"></div>
+        </div>
+      </div>
+
+      <!-- แถบค่าต่าง ๆ ที่แสดงตลอดเวลา -->
+      <div id="kpis"></div>
+    </section>
+
+    <!-- ===================== RIGHT : DASHBOARD ===================== -->
+    <aside id="right">
+      <div id="rTabs" class="tabs">
+        <button class="tab active" data-tab="dash">สรุประบบ</button>
+        <button class="tab" data-tab="detail">รายละเอียด</button>
+        <button class="tab" data-tab="cloud">Cloud</button>
+        <button class="tab" data-tab="log">เหตุการณ์</button>
+      </div>
+      <div id="pDash" class="tabpane scroll active"></div>
+      <div id="pDetail" class="tabpane scroll"></div>
+      <div id="pCloud" class="tabpane scroll"></div>
+      <div id="pLog" class="tabpane scroll"></div>
+    </aside>
+  </main>
+
+  <footer id="statusbar">
+    <span id="statusMsg">พร้อมใช้งาน — เลือกแบบจำลองหรือเริ่มลากองค์ประกอบมาวาง</span>
+    <span class="legend">
+      <i class="sw k-power"></i> สายไฟฟ้า
+      <i class="sw k-cool"></i> ท่อน้ำเย็น / ลมเย็น
+      <i class="sw k-net"></i> สายสัญญาณ
+    </span>
+  </footer>
+</div>
+
+<!-- ===================== MODAL : บทเรียน ===================== -->
+<div id="modal" class="hidden">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>บทเรียนและวิธีใช้งาน</h2>
+      <button id="btnCloseModal" class="btn ghost">✕ ปิด</button>
+    </div>
+    <div id="lessonTabs" class="tabs small"></div>
+    <div id="lessonBody" class="modal-body scroll"></div>
+  </div>
+</div>
+
+<div id="toast" class="hidden"></div>
+
+<script src="js/catalog.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/scenarios.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
