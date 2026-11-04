@@ -206,10 +206,6 @@ select{
 #wires path.selL{stroke:#fff;stroke-width:3}
 @keyframes dash{to{stroke-dashoffset:-14}}
 
-.ghost{
-  position:fixed;z-index:999;pointer-events:none;padding:5px 8px;border-radius:8px;
-  background:#1e293bdd;border:1px solid #5b6ca8;font-size:11px;
-}
 
 /* ----------------------------- KPI strip ----------------------------- */
 #kpis{
